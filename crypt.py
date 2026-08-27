@@ -20,11 +20,8 @@ ALFABETO = [
 # TODO: What if letter is not in alphabet?
 def to_num(letter: str) -> str:
     if len(letter) < 1: raise ValueError("Cannot convert \"{letter}\" to alphabet number")
+    if letter[0] not in ALFABETO: raise ValueError("Cannot find letter \"{letter[0]}\" in alphabet")
     return ALFABETO.index(letter[0])
-
-
-def shift_value(letter: str) -> str:
-    return to_num(letter) + 1 # This 1-indexed
 
 
 def to_letter(num: int) -> str:
