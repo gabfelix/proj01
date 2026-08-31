@@ -2,28 +2,32 @@
 
 CIC0201 · Segurança Computacional · UnB
 
-Implementação da cifra de Vigenère e de **dois ataques independentes** de
-recuperação de chave.
-
-## Requisitos
-
-Python 3.12 ou superior. Sem dependências externas — apenas a biblioteca padrão.
-
-```bash
-python3 --version   # precisa ser >= 3.12
-```
+Implementação da cifra de Vigenère e de dois ataques independentes de
+recuperação de chave. Requer Python 3.12+, sem dependências externas.
 
 ## Arquivos
 
 | Arquivo | Conteúdo |
 |---|---|
 | `ciphers.py` | Classe `VigenereCipher` — cifração e decifração |
-| `__main__.py` | Ataque por Índice de Coincidência (teste de Friedman) |
-| `kasiski.py` | Ataque por exame de Kasiski + qui-quadrado |
-| `teste_kasiski.py` | Suíte de validação do ataque de Kasiski |
-| `exemplo_ct.txt` | Criptograma de exemplo (chave `SEGURANCA`, português) |
+| `__main__.py` | Ataque 1: Índice de Coincidência (teste de Friedman) |
+| `kasiski.py` | Ataque 2: exame de Kasiski + qui-quadrado |
+| `teste_kasiski.py` | Testes do ataque 2 com chaves conhecidas |
+| `atacar.py` | Roda os dois ataques e compara as estimativas |
 
-## Parte I — Cifrar e decifrar
+## Como rodar
+
+```bash
+python3 __main__.py        # ataque por Índice de Coincidência
+python3 kasiski.py         # ataque por Kasiski
+python3 teste_kasiski.py   # testes
+python3 atacar.py          # os dois, lado a lado
+```
+
+Cada arquivo traz uma mensagem e uma chave de exemplo no bloco `__main__` —
+basta editá-las para testar outros casos.
+
+## Cifrar e decifrar
 
 ```python
 from ciphers import VigenereCipher
@@ -34,56 +38,13 @@ pt = cifra.decrypt(ct, "LIMAO")
 ```
 
 Caracteres fora do alfabeto passam sem alteração e não consomem letra da chave.
-Use `strict=True` para que eles gerem erro em vez de passar.
 
-## Parte II — Ataque por Índice de Coincidência
+## Alfabetos
 
-```bash
-python3 __main__.py
-```
+`__main__.py` usa um alfabeto estendido de 98 símbolos (maiúsculas, minúsculas
+e acentuadas). `kasiski.py` usa as 26 letras A–Z, removendo acentos e pontuação
+antes da análise.
 
-Estima o tamanho da chave pelo IoC (teste de Friedman) e recupera cada letra por
-média ponderada de frequências. Opera sobre o alfabeto estendido de 98 símbolos.
-
-## Parte II — Ataque por exame de Kasiski
-
-```bash
-python3 kasiski.py -a exemplo_ct.txt --verboso
-```
-
-Estima o tamanho da chave pelas distâncias entre n-gramas repetidos e recupera
-cada letra pelo teste do qui-quadrado. Detecta o idioma automaticamente.
-
-Opções:
-
-```
--a, --arquivo ARQ     arquivo com o criptograma (padrão: entrada padrão)
-    --idioma pt|en    força o idioma (padrão: detecta)
-    --alfabeto 26|98  alfabeto usado na cifragem (padrão: 26)
-    --tamanho-max N   maior tamanho de chave considerado (padrão: 20)
--v, --verboso         mostra todas as hipóteses testadas
-```
-
-Também aceita entrada padrão:
-
-```bash
-cat criptograma.txt | python3 kasiski.py --idioma pt
-```
-
-### Validação
-
-```bash
-python3 teste_kasiski.py
-```
-
-Cifra textos conhecidos com chaves conhecidas e verifica a recuperação. Cobre
-português e inglês, os dois alfabetos, chaves de 3 a 22 letras, e mede a
-degradação com criptogramas curtos.
-
-## Nota sobre o alfabeto
-
-O alfabeto define o módulo da aritmética da cifra. Um criptograma gerado sobre 26
-símbolos **não** pode ser atacado com aritmética de 98 símbolos, nem o contrário —
-as operações de transbordo diferem e o resultado é ruído, mesmo com a chave
-correta. Ao atacar um criptograma de origem externa, confirme em que alfabeto ele
-foi gerado e use `--alfabeto` de acordo.
+O alfabeto define o módulo da aritmética da cifra: um criptograma gerado sobre
+26 símbolos não pode ser decifrado com aritmética de 98 símbolos, nem o
+contrário, mesmo com a chave correta.
