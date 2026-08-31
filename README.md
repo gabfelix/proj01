@@ -41,10 +41,19 @@ Caracteres fora do alfabeto passam sem alteração e não consomem letra da chav
 
 ## Alfabetos
 
-`__main__.py` usa um alfabeto estendido de 98 símbolos (maiúsculas, minúsculas
-e acentuadas). `kasiski.py` usa as 26 letras A–Z, removendo acentos e pontuação
-antes da análise.
-
 O alfabeto define o módulo da aritmética da cifra: um criptograma gerado sobre
 26 símbolos não pode ser decifrado com aritmética de 98 símbolos, nem o
-contrário, mesmo com a chave correta.
+contrário, mesmo com a chave correta. Por isso o ataque precisa usar o mesmo
+alfabeto da cifragem.
+
+`kasiski.py` aceita os dois: `ALFABETO_26` (A–Z, remove acentos e pontuação) e
+`ALFABETO_98` (o mesmo estendido de `ciphers.py`, com maiúsculas e acentuadas).
+
+```python
+from kasiski import ALFABETO_98, ataque
+chave, texto, idioma = ataque(criptograma, ALFABETO_98)
+```
+
+Para A–Z são usadas as tabelas de frequência publicadas. Para o alfabeto
+estendido, que não tem tabela publicada, as frequências são contadas em uma
+amostra de texto incluída no arquivo.

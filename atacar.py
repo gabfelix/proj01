@@ -36,9 +36,7 @@ if __name__ == "__main__":
         algoritmo nasce do fato de que muitos pesquisadores tentaram quebra-lo
         e nao conseguiram. Um algoritmo secreto nunca passou por esse teste.
         """)
-    ct = "".join(kasiski.ALFABETO[(kasiski.ALFABETO.index(c)
-                 + kasiski.ALFABETO.index(chave_real[i % len(chave_real)])) % 26]
-                 for i, c in enumerate(msg))
+    ct = kasiski.cifra(msg, chave_real)
 
     print(f"criptograma: {len(ct)} letras\n")
 

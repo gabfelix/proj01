@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Testa o ataque de Kasiski com chaves conhecidas, em portugues e ingles.
 
-from kasiski import ALFABETO, normaliza, ataque
+from kasiski import ALFABETO_26, ALFABETO_98, normaliza, cifra, ataque
 
 TEXTO_PT = normaliza("""
     A criptografia e a pratica de tecnicas para comunicacao segura na presenca
@@ -31,24 +31,35 @@ TEXTO_EN = normaliza("""
     """)
 
 
-def cifra(msg, chave):
-    return "".join(ALFABETO[(ALFABETO.index(c) + ALFABETO.index(chave[i % len(chave)])) % 26]
-                   for i, c in enumerate(msg))
-
+# Mesmo texto no alfabeto estendido, com acentos e maiusculas preservados.
+TEXTO_98 = normaliza("""
+    A criptografia é a prática de técnicas para comunicação segura na presença de
+    terceiros. A segurança da informação moderna está ligada à matemática e à
+    ciência da computação. As aplicações incluem o comércio eletrônico, os cartões
+    de pagamento e as comunicações militares. Antes da era moderna, a criptografia
+    era sinônimo de codificação, a conversão de informação de um estado legível
+    para um aparente absurdo. O originador compartilha a técnica apenas com os
+    destinatários pretendidos, para impedir o acesso de adversários. Análises
+    estatísticas das frequências permitem quebrar cifras clássicas.
+    """, ALFABETO_98)
 
 CASOS = [
-    (TEXTO_PT, "LIMA"), (TEXTO_PT, "LIMAO"), (TEXTO_PT, "SEGURANCA"),
-    (TEXTO_PT, "CRIPTOGRAFIA"),
-    (TEXTO_EN, "KEY"), (TEXTO_EN, "SECRET"), (TEXTO_EN, "CRYPTOGRAPHY"),
-    (TEXTO_EN, "COMPUTERSECURITY"),
+    (TEXTO_PT, "LIMA", ALFABETO_26), (TEXTO_PT, "LIMAO", ALFABETO_26),
+    (TEXTO_PT, "SEGURANCA", ALFABETO_26), (TEXTO_PT, "CRIPTOGRAFIA", ALFABETO_26),
+    (TEXTO_EN, "KEY", ALFABETO_26), (TEXTO_EN, "SECRET", ALFABETO_26),
+    (TEXTO_EN, "CRYPTOGRAPHY", ALFABETO_26),
+    (TEXTO_EN, "COMPUTERSECURITY", ALFABETO_26),
+    (TEXTO_98, "limao", ALFABETO_98), (TEXTO_98, "Seguranca", ALFABETO_98),
+    (TEXTO_98, "Criptografia", ALFABETO_98),
 ]
 
 acertos = 0
-for msg, chave in CASOS:
-    achada, texto, _ = ataque(cifra(msg, chave), verboso=False)
+for msg, chave, alfabeto in CASOS:
+    achada, texto, _ = ataque(cifra(msg, chave, alfabeto), alfabeto, verboso=False)
     ok = achada == chave and texto == msg
     acertos += ok
-    print(f"  [{'OK ' if ok else 'ERRO'}] chave {chave:<18} -> {achada}")
+    print(f"  [{'OK ' if ok else 'ERRO'}] alfabeto {len(alfabeto):>2} | "
+          f"chave {chave:<18} -> {achada}")
 
 print(f"\n{acertos}/{len(CASOS)} casos corretos")
 
