@@ -3,7 +3,8 @@
 CIC0201 · Segurança Computacional · UnB
 
 Implementação da cifra de Vigenère e de dois ataques independentes de
-recuperação de chave. Requer Python 3.12+, sem dependências externas.
+recuperação de chave. Requer Python 3.10 ou superior (testado em 3.11, 3.12 e
+3.13), sem dependências externas.
 
 ## Arquivos
 
@@ -38,6 +39,77 @@ python3 teste_kasiski.py   # testes
 
 Cada uma traz mensagem e chave de exemplo no bloco `__main__` — basta editá-las
 para testar outros casos.
+
+## Roteiro de teste
+
+Um percurso completo: cifrar uma mensagem, decifrá-la de volta e depois atacar
+o mesmo criptograma sem informar a chave.
+
+```bash
+python3 programa.py
+```
+
+### 1. Cifrar
+
+| Prompt | Digite |
+|---|---|
+| `Opcao:` | `1` |
+| `Escolha [1]:` | `1` |
+| `Chave:` | `LIMAO` |
+| `Mensagem` | o parágrafo abaixo |
+| linha vazia | Enter |
+
+```
+A criptografia sempre foi uma ferramenta essencial para a humanidade desde os tempos antigos. O desejo de ocultar informacoes importantes impulsionou o desenvolvimento de cifras cada vez mais complexas ao longo dos seculos. Quando olhamos para a evolucao das comunicacoes percebemos que a necessidade de privacidade e seguranca moldou a tecnologia moderna de maneira profunda. Hoje usamos algoritmos matematicos avancados para proteger nossos dados pessoais e garantir que as mensagens cheguem apenas aos destinatarios corretos.
+```
+
+O criptograma começa em `LKDIDEWSROQQ...`. **Copie-o**, ele é usado nos passos
+seguintes.
+
+### 2. Decifrar de volta
+
+Opção `2`, alfabeto `1`, chave `LIMAO`, e cole o criptograma. O texto original
+volta em maiúsculas e sem pontuação.
+
+### 3. Atacar sem a chave
+
+Opção `3`, alfabeto `1`, e cole o mesmo criptograma. Agora **não** informe a
+chave:
+
+```
+--- Tamanho da chave ---
+  Kasiski (repeticoes)  : [2, 3, 4, 5, 10, 15, 20]
+  Friedman (IoC)        : 20
+  -> os dois metodos concordam em 20
+
+--- Chave ---
+  Kasiski + qui-quadrado : LIMAO   (idioma: portugues)
+```
+
+Repare que o Friedman estimou 20, um múltiplo do tamanho real. É a
+superestimação discutida no relatório: uma chave e suas repetições decifram o
+mesmo texto, e o qui-quadrado desempata pela mais curta.
+
+### 4. Validação de entrada
+
+Repita o passo 1 digitando a chave em minúsculas (`limao`). Ela é recusada, com
+os caracteres inválidos listados.
+
+### 5. O limite do método
+
+Cifre apenas `Atacar a base sul` com a chave `LIMAO` — saem 14 letras,
+`LBMCOCINAGPAGL` — e tente atacar o resultado. O ataque recusa em vez de
+inventar uma chave:
+
+```
+Criptograma curto demais (menos de 20 simbolos).
+```
+
+O método precisa de cerca de **25 letras por letra da chave** — chave de 5 quer
+125 letras de texto, chave de 12 quer 300. Não é limitação da implementação, é
+estatística: com poucas amostras não há distribuição a reconhecer. É por isso
+que a cifra de Vigenère resistiu três séculos: ela é segura para mensagens
+curtas, e só cede quando muito texto é cifrado com a mesma chave.
 
 ## Cifrar e decifrar
 
