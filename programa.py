@@ -3,8 +3,40 @@
 #
 #     python3 programa.py
 
+import contextlib
+import importlib.util
+import io
+import os
+
 from ciphers import VigenereCipher
-from kasiski import ALFABETO_26, ALFABETO_98, ataque, normaliza
+from kasiski import (ALFABETO_26, ALFABETO_98, ataque, candidatos_tamanho,
+                     normaliza)
+
+# O ataque por IoC esta em __main__.py, nome reservado pelo Python, entao
+# precisa ser carregado pelo caminho do arquivo em vez de "import".
+_spec = importlib.util.spec_from_file_location(
+    "ioc", os.path.join(os.path.dirname(os.path.abspath(__file__)), "__main__.py"))
+ioc = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(ioc)
+
+
+def estima_por_ioc(ct):
+    """Tamanho da chave estimado pelo Indice de Coincidencia."""
+    with contextlib.redirect_stdout(io.StringIO()):   # silencia prints internos
+        return ioc.estimate_key_length(ct)
+
+
+def chave_por_ioc(ct, tamanho):
+    """
+    Chave recuperada por analise de frequencia (media ponderada).
+
+    crack() no modulo de IoC le a variavel global `ciphertext` em vez do proprio
+    parametro, entao definimos a global antes de chamar. Corrigindo aquela linha
+    para usar `ct`, esta atribuicao deixa de ser necessaria.
+    """
+    ioc.ciphertext = ct
+    with contextlib.redirect_stdout(io.StringIO()):
+        return ioc.crack(ct, tamanho)
 
 
 def escolhe_alfabeto():
@@ -99,16 +131,41 @@ def atacar():
         print(f"\nSo {len(util)} simbolos validos neste alfabeto. Curto demais,")
         print("ou o criptograma foi gerado com outro alfabeto.")
         return
-    print(f"\n{len(util)} simbolos para analisar...\n")
+    print(f"\n{len(util)} simbolos para analisar.")
 
+    # Etapa 1, pelos dois caminhos independentes.
+    candidatos, _ = candidatos_tamanho(util)
+    tam_ioc = estima_por_ioc(util)
+
+    print("\n--- Tamanho da chave ---")
+    print(f"  Kasiski (repeticoes)  : {candidatos or 'nenhuma repeticao'}")
+    print(f"  Friedman (IoC)        : {tam_ioc if tam_ioc > 0 else 'nenhuma estimativa'}")
+    if tam_ioc > 0 and tam_ioc in candidatos:
+        print(f"  -> os dois metodos concordam em {tam_ioc}")
+    elif tam_ioc > 0 and candidatos:
+        multiplos = [c for c in candidatos if tam_ioc % c == 0]
+        if multiplos:
+            print(f"  -> compativeis: {tam_ioc} e multiplo de {multiplos}")
+        else:
+            print(f"  -> divergem; o criptograma pode estar no limite dos metodos")
+
+    # Etapa 2: recuperacao da chave.
+    print("\n--- Chave ---")
     try:
-        chave, texto, idioma = ataque(ct, alfabeto)
+        chave, texto, idioma = ataque(ct, alfabeto, verboso=False)
+        print(f"  Kasiski + qui-quadrado : {chave}   (idioma: {idioma})")
     except ValueError as e:
-        print(f"Nao foi possivel atacar: {e}")
+        print(f"  Kasiski + qui-quadrado : nao foi possivel ({e})")
         return
 
-    print(f"\nCHAVE ENCONTRADA : {chave}")
-    print(f"Idioma detectado : {idioma}")
+    # O ataque por IoC opera sobre o alfabeto de 98; no de 26 ele estima o
+    # tamanho, mas nao consegue recuperar as letras, por incompatibilidade
+    # de aritmetica.
+    if alfabeto == ALFABETO_98 and tam_ioc > 0:
+        print(f"  Friedman + media pond. : {chave_por_ioc(util, tam_ioc)}")
+    else:
+        print(f"  Friedman + media pond. : nao aplicavel no alfabeto de 26")
+
     print(f"\nTexto decifrado:\n{texto}")
 
 

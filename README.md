@@ -13,7 +13,6 @@ recuperação de chave. Requer Python 3.12+, sem dependências externas.
 | `__main__.py` | Ataque 1: Índice de Coincidência (teste de Friedman) |
 | `kasiski.py` | Ataque 2: exame de Kasiski + qui-quadrado |
 | `teste_kasiski.py` | Testes do ataque 2 com chaves conhecidas |
-| `atacar.py` | Roda os dois ataques e compara as estimativas |
 | `programa.py` | Programa interativo: cifrar, decifrar e atacar |
 
 ## Como rodar
@@ -25,7 +24,9 @@ python3 programa.py
 ```
 
 Menu com três opções — cifrar, decifrar e atacar — perguntando o alfabeto, a
-chave e o texto, com validação das entradas.
+chave e o texto, com validação das entradas. A opção de ataque roda **os dois
+métodos** sobre o mesmo criptograma e compara as estimativas de tamanho da
+chave, que é a validação cruzada entre eles.
 
 Para as demonstrações automáticas:
 
@@ -33,7 +34,6 @@ Para as demonstrações automáticas:
 python3 __main__.py        # ataque por Índice de Coincidência
 python3 kasiski.py         # ataque por Kasiski
 python3 teste_kasiski.py   # testes
-python3 atacar.py          # os dois ataques, lado a lado
 ```
 
 Cada uma traz mensagem e chave de exemplo no bloco `__main__` — basta editá-las
