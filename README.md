@@ -14,18 +14,30 @@ recuperação de chave. Requer Python 3.12+, sem dependências externas.
 | `kasiski.py` | Ataque 2: exame de Kasiski + qui-quadrado |
 | `teste_kasiski.py` | Testes do ataque 2 com chaves conhecidas |
 | `atacar.py` | Roda os dois ataques e compara as estimativas |
+| `programa.py` | Programa interativo: cifrar, decifrar e atacar |
 
 ## Como rodar
+
+Para escolher a mensagem e a chave na hora:
+
+```bash
+python3 programa.py
+```
+
+Menu com três opções — cifrar, decifrar e atacar — perguntando o alfabeto, a
+chave e o texto, com validação das entradas.
+
+Para as demonstrações automáticas:
 
 ```bash
 python3 __main__.py        # ataque por Índice de Coincidência
 python3 kasiski.py         # ataque por Kasiski
 python3 teste_kasiski.py   # testes
-python3 atacar.py          # os dois, lado a lado
+python3 atacar.py          # os dois ataques, lado a lado
 ```
 
-Cada arquivo traz uma mensagem e uma chave de exemplo no bloco `__main__` —
-basta editá-las para testar outros casos.
+Cada uma traz mensagem e chave de exemplo no bloco `__main__` — basta editá-las
+para testar outros casos.
 
 ## Cifrar e decifrar
 
