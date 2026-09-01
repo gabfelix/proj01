@@ -1,110 +1,29 @@
 #!/usr/bin/env python3
+"""
+Ataque à cifra de Vigenère por Índice de Coincidência (teste de Friedman).
 
-from ciphers import VigenereCipher
+Estima o tamanho da chave pelo IoC e, para cada coluna (que é uma cifra de
+César), escolhe a letra da chave cuja decifração melhor encaixa na
+distribuição de frequência esperada da língua. Testa português e inglês e
+fica com o resultado de melhor encaixe -- o que também identifica o idioma.
+
+Opera sobre o alfabeto estendido de 98 símbolos definido em ciphers.py.
+"""
+
 from collections import Counter
 
-CUSTOM_ALFABETO = [
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-    "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f",
-    "g",
-    "h",
-    "i",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "o",
-    "p",
-    "q",
-    "r",
-    "s",
-    "t",
-    "u",
-    "v",
-    "w",
-    "x",
-    "y",
-    "z",
-    "Á",
-    "À",
-    "Â",
-    "Ã",
-    "Ä",
-    "É",
-    "È",
-    "Ê",
-    "Ë",
-    "Í",
-    "Ì",
-    "Î",
-    "Ï",
-    "Ó",
-    "Ò",
-    "Ô",
-    "Õ",
-    "Ö",
-    "Ú",
-    "Ù",
-    "Û",
-    "Ü",
-    "Ç",
-    "á",
-    "à",
-    "â",
-    "ã",
-    "ä",
-    "é",
-    "è",
-    "ê",
-    "ë",
-    "í",
-    "ì",
-    "î",
-    "ï",
-    "ó",
-    "ò",
-    "ô",
-    "õ",
-    "ö",
-    "ú",
-    "ù",
-    "û",
-    "ü",
-    "ç",
-]
+from ciphers import VigenereCipher, ALFABETO_98 as CUSTOM_ALFABETO, FREQ_PT, FREQ_EN
 
 cipher = VigenereCipher(CUSTOM_ALFABETO)
+
+# As tabelas de ciphers.py são indexadas por A-Z. O texto claro esperado é
+# minúsculo; indexamos por minúscula e NÃO normalizamos a caixa ao pontuar --
+# neste alfabeto de 98 símbolos maiúscula e minúscula são deslocamentos
+# distintos, e uma decifração que cai em maiúsculas indica chave errada.
+FREQ = {
+    "pt": {c.lower(): v for c, v in FREQ_PT.items()},
+    "en": {c.lower(): v for c, v in FREQ_EN.items()},
+}
 
 
 def ioc(s: str, normalized: bool = True) -> float:
@@ -119,109 +38,76 @@ def ioc(s: str, normalized: bool = True) -> float:
         return sum_of_matches / ((n * (n - 1)) / len(CUSTOM_ALFABETO))
 
 
-def estimate_key_length(ct: str, max: int = 20) -> int:
+def estimate_key_length(ct: str, limite: int = 20) -> int:
     filtered_ct = [c for c in ct if c in cipher.alphabet]
     iocs = []
-    for length in range(1, max + 1):
+    for length in range(1, limite + 1):
         columns = ["" for _ in range(length)]
         for i, char in enumerate(filtered_ct):
             columns[i % length] += char
         avg_ioc = sum(ioc(col) for col in columns) / length
         iocs.append((length, avg_ioc))
 
-    baseline = sum(ioc for _, ioc in iocs) / len(iocs)
+    # Um tamanho ao acaso deixa o IoC médio perto do valor de língua diluído;
+    # o tamanho certo (e seus múltiplos) faz cada coluna virar texto de uma
+    # única César, com IoC alto. Pegamos o menor acima de 1,5x a média.
+    baseline = sum(ic for _, ic in iocs) / len(iocs)
     threshold = baseline * 1.5
-    print(f"thres: {threshold}")
 
-    candidate_key_lengths = []
-    for l, ic in iocs:
-        if ic > threshold:
-            print(f"col {l}: {ic}")
-            candidate_key_lengths.append(l)
-
-    if len(candidate_key_lengths) == 0:
-        return -1  # ERROR
-    return candidate_key_lengths[0]
+    candidatos = [length for length, ic in iocs if ic > threshold]
+    return candidatos[0] if candidatos else -1
 
 
-def score_text(text: str) -> float:
-    freqs = {
-        "a": 12.21,
-        "b": 1.01,
-        "c": 3.35,
-        "d": 4.21,
-        "e": 13.19,
-        "f": 1.07,
-        "g": 1.08,
-        "h": 1.22,
-        "i": 5.49,
-        "j": 0.30,
-        "k": 0.13,
-        "l": 3.00,
-        "m": 5.07,
-        "n": 5.02,
-        "o": 10.22,
-        "p": 3.01,
-        "q": 1.10,
-        "r": 6.73,
-        "s": 7.35,
-        "t": 5.07,
-        "u": 4.46,
-        "v": 1.72,
-        "w": 0.05,
-        "x": 0.28,
-        "y": 0.04,
-        "z": 0.45,
-        "ã": 0.83,
-        "â": 0.03,
-        "á": 0.41,
-        "à": 0.04,
-        "ç": 0.40,
-        "é": 0.52,
-        "ê": 0.36,
-        "í": 0.18,
-        "ó": 0.17,
-        "õ": 0.04,
-        "ô": 0.01,
-        "ú": 0.11,
-        "A": 0.12,
-        "E": 0.13,
-        "O": 0.10,
-    }
+def score_text(text: str, freqs: dict) -> float:
+    """Soma os pesos de frequência da língua `freqs` para as letras de `text`."""
     return sum(freqs.get(char, 0.0) for char in text)
 
 
-def crack(ct: str, key_length: int) -> str:
-    iterations = 0
-
-    filtered_ct = [c for c in ciphertext if c in cipher.alphabet]
+def crack(ct: str, key_length: int, freqs: dict) -> str:
+    """Recupera a chave: em cada coluna, testa toda letra e mantém a de melhor encaixe."""
+    filtered_ct = [c for c in ct if c in cipher.alphabet]
     columns = ["" for _ in range(key_length)]
-
     for i, char in enumerate(filtered_ct):
         columns[i % key_length] += char
 
-    # if we got the key length right, each column is a simple caesar cipher, since they share the same letter from the key
-    primary_key_guess = ""
+    key_guess = ""
     for col in columns:
-        best_char = ""
-        best_score = -1.0
-
-        # try every possible letter and see which one fits the target frequency the best
+        best_char, best_score = "", -1.0
         for possible_key_char in cipher.alphabet:
-            iterations += 1
-            score = score_text(cipher.decrypt(col, possible_key_char))
+            score = score_text(cipher.decrypt(col, possible_key_char), freqs)
             if score > best_score:
-                best_score = score
-                best_char = possible_key_char
-        # add it to the key
-        primary_key_guess += best_char
-    print(f"Ran {iterations} iterations")
-    return primary_key_guess
+                best_score, best_char = score, possible_key_char
+        key_guess += best_char
+    return key_guess
+
+
+def attack(ct: str) -> tuple[str, str, str]:
+    """
+    Ataque completo. Devolve (idioma, chave, texto_claro).
+
+    Estima o tamanho da chave uma vez e resolve a chave para português e para
+    inglês. O idioma verdadeiro produz o texto de maior encaixe médio na sua
+    própria tabela de frequência -- é esse que retornamos.
+    """
+    kl = estimate_key_length(ct)
+    if kl < 1:
+        raise ValueError("não foi possível estimar o tamanho da chave pelo IoC")
+
+    melhor = None
+    for idioma, freqs in FREQ.items():
+        chave = crack(ct, kl, freqs)
+        texto = cipher.decrypt(ct, chave)
+        letras = sum(1 for c in texto if c in freqs)
+        encaixe = score_text(texto, freqs) / max(1, letras)
+        if melhor is None or encaixe > melhor[0]:
+            melhor = (encaixe, idioma, chave, texto)
+
+    _, idioma, chave, texto = melhor
+    return idioma, chave, texto
 
 
 if __name__ == "__main__":
-    test_key = "limaosinhoinho"
-    msg = (
+    MSG_PT = (
         "Acriptografiasemprefoiumaferramentaessencialparaahumanidadedesdeostemposantigos"
         "Odesejodeocultarinformaçõesimportantesimpulsionouodesenvolvimentodecifrascomplexas"
         "Quandoolhamosparaaevoluçãodascomunicaçõespercebemosqueanecessidadedeprivacidadeesegurança"
@@ -230,13 +116,25 @@ if __name__ == "__main__":
         "Acomplexidadedoalfabetoeamatemáticaportrásdacodificaçãotornamaanáliseestatística"
         "fascinanteedesafiadora"
     )
-    ciphertext = cipher.encrypt(msg, test_key)
-    print(f"ciphertext: {ciphertext[:20]}...")
-    kl = estimate_key_length(ciphertext)
-    if kl < 1:
-        print("Failed to estimate key length (no columns met IoC threshold)")
-        exit(1)
-    print(f"key length: {kl}")
-    cracked_key = crack(ciphertext, kl)
-    print(f"guessed key: {cracked_key}")
-    print(f"decrypted: {cipher.decrypt(ciphertext, cracked_key)[:50]}...")
+    MSG_EN = (
+        "thevigenereciphersisamethodofencryptingalphabetictextwhereeachletteroftheplaintext"
+        "isshiftedalongsomenumberofplacesthemethodusesaseriesofinterwovencaesarcipherschosen"
+        "accordingtothelettersofakeywordfirstdescribedbygiovanbattistabellasoinfifteenfifty"
+        "threethecipherwaslongthoughttobeunbreakableanditearnedthenicknametheindecipherable"
+        "ciphercharlesbabbageandlaterfriedrichkasiskishowedhowtobreakitbyfindingtherepeating"
+        "keylengthandthentreatingeachcolumnasasimplesubstitutionthatyieldstoletterfrequency"
+        "analysistheindexofcoincidencegivesanotherwaytoestimatethekeylengthbecauseitishigher"
+        "fornaturallanguagethanforrandomtext"
+    )
+    DEMOS = [("limaosinhoinho", "pt", MSG_PT), ("blackcat", "en", MSG_EN)]
+
+    for chave_real, idioma_real, msg in DEMOS:
+        ct = cipher.encrypt(msg, chave_real)
+        idioma, chave, texto = attack(ct)
+        print(f"\n=== demo {idioma_real.upper()} ===")
+        print(f"  tam. chave estimado : {estimate_key_length(ct)}")
+        print(f"  chave real          : {chave_real}")
+        print(f"  chave recuperada    : {chave}")
+        print(f"  idioma detectado    : {idioma}  ({'ok' if idioma == idioma_real else 'ERRO'})")
+        print(f"  texto recuperado    : {'ok' if texto == msg else 'ERRO'}")
+        print(f"  primeiros caracteres: {texto[:70]}...")
