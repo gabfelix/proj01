@@ -11,29 +11,13 @@
 import unicodedata
 from collections import Counter
 
-ALFABETO_26 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+from ciphers import (ALFABETO_26 as _A26, ALFABETO_98 as _A98,
+                     FREQ_PT, FREQ_EN)
 
-# Alfabeto estendido, o mesmo de ciphers.py e do ataque por IoC.
-ALFABETO_98 = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-               "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇáàâãäéèêëíìîïóòôõöúùûüç")
-
-# Portugues do Brasil, em % — B. R. Braga, "Analise de Frequencias de Linguas",
-# RAVEL/COPPE/UFRJ, 2003. Corpus de 1,1 MB de textos de autores brasileiros;
-# o estudo desconsidera acentos e trata C-cedilha como C, mesma normalizacao
-# que aplicamos no alfabeto de 26 letras.
-FREQ_PT = {'A': 14.64, 'B': 1.16, 'C': 3.76, 'D': 4.97, 'E': 12.70, 'F': 1.02,
-           'G': 1.29, 'H': 1.42, 'I': 5.90, 'J': 0.32, 'K': 0.01, 'L': 2.95,
-           'M': 4.71, 'N': 4.85, 'O': 10.78, 'P': 2.58, 'Q': 1.09, 'R': 6.88,
-           'S': 7.97, 'T': 4.26, 'U': 4.42, 'V': 1.68, 'W': 0.01, 'X': 0.23,
-           'Y': 0.01, 'Z': 0.42}
-
-# Ingles, em % — H. Beker e F. Piper, "Cipher Systems", Wiley, 1982, p. 397.
-# Amostra de 100.362 caracteres de jornais e romances.
-FREQ_EN = {'A': 8.17, 'B': 1.49, 'C': 2.78, 'D': 4.25, 'E': 12.70, 'F': 2.23,
-           'G': 2.02, 'H': 6.09, 'I': 6.97, 'J': 0.15, 'K': 0.77, 'L': 4.03,
-           'M': 2.41, 'N': 6.75, 'O': 7.51, 'P': 1.93, 'Q': 0.10, 'R': 5.99,
-           'S': 6.33, 'T': 9.06, 'U': 2.76, 'V': 0.98, 'W': 2.36, 'X': 0.15,
-           'Y': 1.97, 'Z': 0.07}
+# Alfabetos e tabelas de frequencia vem de ciphers.py, fonte unica do projeto.
+# Aqui usamos os alfabetos como string, por conveniencia de indexacao.
+ALFABETO_26 = "".join(_A26)
+ALFABETO_98 = "".join(_A98)
 
 # Nao existe tabela publicada cobrindo maiusculas e acentuadas. Para alfabetos
 # estendidos, contamos as letras nestas amostras em vez de estimar pesos.
